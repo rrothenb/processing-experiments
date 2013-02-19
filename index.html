@@ -1,0 +1,220 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Jessa</title>
+</head>
+<body>
+  <canvas id="mycanvas"></canvas>
+  
+  <script src="processing-1.4.1.js"></script>
+  <script type="text/processing" data-processing-target="mycanvas">
+/** @peep sketchcode **/
+int NUM_CIRCLES = 0.000355*1000*1000;
+float MIN_RADIUS = 15;
+float MAX_RADIUS = 50;
+
+float DELTA_ANGLE = TWO_PI/555;
+
+Circle[] circles;
+
+void setup() {
+ size(1000, 1000);
+ //frameRate(10);
+ background(255);
+ smooth();
+ circles = new Circle[NUM_CIRCLES];
+ for (int i = 0; i < circles.length; i++) {
+   circles[i] = new Circle(random(width-2*MAX_RADIUS)+MAX_RADIUS, random(height-2*MAX_RADIUS)+MAX_RADIUS, random(MIN_RADIUS, MAX_RADIUS));
+ }
+}
+
+void update() {
+ for (int i = 0; i < circles.length; i++) {
+   circles[i].update();
+   //circles[i].element2();
+ }
+}
+
+void draw() {
+ //background(0);
+ update(); // Update all of the circles
+ strokeWeight(0.5);
+ for (int i = 0; i < circles.length; i++) {
+   // Get a first circle
+   Circle circle1 = circles[i];
+   for (int j = i+1; j < circles.length; j++) {
+     // Get a second circle
+     Circle circle2 = circles[j];
+     // If the circles are touching
+     if (circle1.touching(circle2)) {
+       //stroke(255,10);
+       //point(circle1.x, circle1.y);
+       //point(circle2.x, circle2.y);
+       //circle1.draw();
+       //circle2.draw();
+       // Calculate the grey value using the map function based on the distance between the circles
+       //stroke(map(circle1.distance(circle2), 0, circle1.radius + circle2.radius, 0, 255));
+       float distance = circle1.distance(circle2);
+       float color = distance/(circle1.radius + circle2.radius)*255;
+       //float color = distance/2/MAX_RADIUS*255;
+       float r = (circle1.r + circle2.r)/2*color/255;
+       float g = (circle1.g + circle2.g)/2*color/255;
+       float b = (circle1.b + circle2.b)/2*color/255;
+       stroke(r, g, b, 50);
+        
+       // Draw a line between the centres of the circles
+       line(circle1.x, circle1.y, circle2.x, circle2.y);
+     }
+   }
+ }
+}
+
+class Circle {
+ float x;
+ float y;
+ float radius;
+
+ float heading;
+ float speed;
+ float rotation;
+
+ int r;
+ int g;
+ int b;
+
+ Circle(float _x, float _y, float _radius) {
+   x = _x;
+   y = _y;
+   radius = _radius;
+   heading = random(TWO_PI);
+   //heading = 0;
+   speed = random(0.1,1.0);
+   rotation = random(-DELTA_ANGLE, DELTA_ANGLE);
+   r = random(0, 255);
+   g = 255 - r;
+   b = random(200, 255);
+ }
+
+ void draw() {
+   pushStyle();
+   noFill();
+   stroke(0);
+   strokeWeight(1);
+   ellipseMode(RADIUS);
+   pushMatrix();
+   translate(x, y);
+   rotate(heading);
+   //ellipse(0, 0, radius, radius);
+   //line(0, 0, radius, 0);
+   stroke(255,25);
+   point(0,0);
+   popMatrix();
+   //stroke(192, 0, 0, 64);
+   for (int i = 0; i < circles.length; i++) {
+     Circle other = circles[i];
+     if (touching(other)) {
+       //line(x, y, other.x, other.y);
+     }
+   }
+   popStyle();
+ }
+
+ void update() {
+   behaviour1();
+   behaviour2();
+   behaviour3();
+   //behaviour4();
+ }
+
+ void element2() {
+   behaviour1();
+   behaviour5();
+ }
+
+ void behaviour1() {
+   // Constant linear motion
+   float dx = speed * cos(heading);
+   float dy = speed * sin(heading);
+   x += dx;
+   y += dy;
+ }
+
+ void behaviour2() {
+   // Constrain to surface
+   if (x < radius) {
+     x = radius;
+     heading = PI - heading;
+   }
+   if (y < radius) {
+     y = radius;
+     heading = TWO_PI - heading;
+   }
+   if (x > width - radius) {
+     x = width - radius;
+     heading = PI - heading;
+   }
+   if (y > height - radius) {
+     y = height - radius;
+     heading = TWO_PI - heading;
+   }
+ }
+
+ void behaviour3() {
+   // While touching another, change direction
+   for (int i = 0; i < circles.length; i++) {
+     if (circles[i] != this) {
+       if (touching(circles[i])) {
+         //heading += random(-DELTA_ANGLE, DELTA_ANGLE);
+         heading += rotation;
+         return;
+       }
+     }
+   }
+ }
+
+ void behaviour4() {
+   // While touching another, move away from its centre
+   for (int i = 0; i < circles; i++) {
+     if (circles[i] != this) {
+       if (touching(circles[i])) {
+         Circle other = circles[i];
+         float d = distance(other);
+         float dx = (other.x - x)/d;
+         float dy = (other.y - y)/d;
+         x -= speed * dx;
+         y -= speed * dy;
+       }
+     }
+   }
+ }
+
+ void behaviour5() {
+   // Enter from the opposite edge after moving off the surface
+   if (x < 0) {
+     x = width;
+   }
+   if (x > width) {
+     x = 0;
+   }
+   if (y < 0) {
+     y = height;
+   }
+   if (y > height) {
+     y = 0;
+   }
+ }
+
+ void touching(Circle other) {
+   return (distance(other) < radius + other.radius);
+ }
+
+ float distance(Circle other) {
+   return dist(x, y, other.x, other.y);
+ }
+}
+
+</script>
+</body>
+</html>
